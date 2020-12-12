@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -81,7 +82,7 @@ void ngram(string line, int n)
   }
   else
   {
-    cout << line << endl;
+    // cout << line << endl;
   }
 }
 
@@ -155,22 +156,24 @@ void morpheme()
     }
     else
     {
-      cerr << "##";
       if (beforeJudge == 4)
       {
-        word += ngramed.at(i);
         flag_same = true;
-        continue;
+        word += ngramed.at(i);
+        if ( i <= ngramed.size() - 2 && judge ==  judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]))
+        {
+          continue;
+        }
       }
       else 
       {
-        if ( flag_same )
-        {
-          txt.push_back(word);
-        }
-        beforeJudge = 4;
+        beforeJudge = judge;
         word = ngramed.at(i);
         flag_same = false;
+        if ( i <= ngramed.size() - 2 && judge ==  judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]))
+        {
+          continue;
+        }
       }
     }
     txt.push_back(word);
@@ -202,36 +205,81 @@ void morpheme()
 
 int main()
 {
-  string line;
-  cout << "input" << endl;
-  getline(cin, line);
+  const char* fname = "bocchan-utf-8.txt";
 
-  ngram(line, 1);
+  ifstream ifs( fname );
+  if ( !ifs )
+  {
+    cerr << "failed" << fname << endl;
+    exit(1);
+  }
+
+  string buf;
+  vector<string> bufs;
+  getline( ifs, buf );
+  while( !ifs.eof() )
+  {
+    bufs.push_back(buf);
+    getline( ifs, buf );
+  }
+  ifs.close();
+  for ( int i = 0; i < bufs.size(); i++ )
+  {
+    ngram(bufs.at(i), 1);
+  }
+
   morpheme();
   
-  cout << "txt====================================================================" << endl;
-  for (int i = 0; i < txt.size(); i++)
+  cout << "noun start" << endl;
+  ofstream ofs_noun("noun.txt");
+  if ( !ofs_noun )
   {
-    cout << txt.at(i) << endl;
+    cerr << "failed" << "noun.txt" << endl;
+    exit(1);
   }
-  cout << "noun====================================================================" << endl;
   for (int i = 0; i < noun.size(); i++)
   {
-    cout << noun.at(i) << endl;
+    ofs_noun << noun.at(i) << endl;
   }
-  cout << "verb====================================================================" << endl;
+  ofs_noun.close();
+  cout << "noun finished" << endl;
+  cout << "verb start" << endl;
+  ofstream ofs_verb("verb.txt");
+  if ( !ofs_verb )
+  {
+    cerr << "failed" << "verb.txt" << endl;
+    exit(1);
+  }
   for (int i = 0; i < verb.size(); i++)
   {
-    cout << verb.at(i) << endl;
+    ofs_verb << verb.at(i) << endl;
   }
-  cout << "adj====================================================================" << endl;
+  ofs_verb.close();
+  cout << "verb finished" << endl;
+  cout << "adj start" << endl;
+  ofstream ofs_adj("adj.txt");
+  if ( !ofs_adj )
+  {
+    cerr << "failed" << "adj.txt" << endl;
+    exit(1);
+  }
   for (int i = 0; i < adj.size(); i++)
   {
-    cout << adj.at(i) << endl;
+    ofs_adj << adj.at(i) << endl;
   }
-  cout << "adjv====================================================================" << endl;
+  ofs_adj.close();
+  cout << "adj finished" << endl;
+  cout << "adjv start" << endl;
+  ofstream ofs_adjv("adjv.txt");
+  if ( !ofs_adjv )
+  {
+    cerr << "failed" << "adjv.txt" << endl;
+    exit(1);
+  }
   for (int i = 0; i < adjv.size(); i++)
   {
-    cout << adjv.at(i) << endl;
+    ofs_adjv << adjv.at(i) << endl;
   }
+  ofs_adjv.close();
+  cout << "adjv finished" << endl;
 }

@@ -115,19 +115,11 @@ int judgeMorpheme(unsigned char c1, unsigned char c2, unsigned char c3)
   return flag;
 }
 
-int main()
+void morpheme()
 {
-  string line;
-  cout << "input" << endl;
-  getline(cin, line);
-  bool romen = false;
   string word = "";
   int beforeJudge = 5; // 0, 1, -1以外の何でもない数
   bool flag_same = false;
-
-
-  ngram(line, 1);
-
   for (int i = 0; i < ngramed.size(); i++)
   {
     if(countByte(ngramed.at(i)[0]) == 3)
@@ -179,11 +171,18 @@ int main()
     }
     txt.push_back(word);
   }
+}
+
+int main()
+{
+  string line;
+  cout << "input" << endl;
+  getline(cin, line);
+
+  ngram(line, 1);
+  morpheme();
   for (int i = 0; i < txt.size(); i++)
   {
     cout << txt.at(i) << endl;
   }
-  
-
-
 }
