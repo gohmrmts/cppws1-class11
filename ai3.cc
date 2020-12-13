@@ -5,6 +5,8 @@
 
 using namespace std;
 
+vector<string> ngramed;
+vector<string> txt;
 vector<string> noun;
 vector<string> verb;
 vector<string> adj;
@@ -40,82 +42,232 @@ int countByte(unsigned char c)
   return byte;
 }
 
-string sel_noun( string word )
+int countChar(string line)
 {
-  srand( time( NULL ) );
-  string line;
-  ifstream ifs_noun("noun.txt");
-  if ( !ifs_noun )
+  int num = 0;
+  int i = 0;
+  while(line[i] != '\0')
   {
-    cerr << "failed open noun.txt" << endl;
-    exit(1);
+    i += countByte(line[i]);
+    num++;
   }
-  getline( ifs_noun, line );
-  while( !ifs_noun.eof() )
-  {
-    noun.push_back( line );
-    getline( ifs_noun, line );
-  }
+  return num;
+}
 
-  vector<string> sel_noun;
+void ngram(string line, int n)
+{
+  int numChar = countChar(line);
+  int count  = 0;
 
-  for ( int i = 0; i < noun.size(); i++ )
+  if (numChar >= n)
   {
-    if ( word == noun.at(i).substr(0, countByte(noun.at(i)[0])) )
+    for (int i = 0; i < line.size(); i += countByte(line[i]))
     {
-      sel_noun.push_back( noun.at(i) );
+      if (count <= numChar - n)
+      {
+        count++;
+        string tmp;
+        for(int j = 0; j < n; j++)
+        {
+          // cout << line.substr(i + j * (countByte(line[i])), countByte(line[i]));
+          tmp += line.substr(i + j * (countByte(line[i])), countByte(line[i]));
+        }
+        ngramed.push_back(tmp);
+      }
+      else
+      {
+        break;
+      }
     }
   }
+  else
+  {
+    // cout << line << endl;
+  }
+}
 
-  int r = rand() % sel_noun.size();
+int judgeMorpheme(unsigned char c1, unsigned char c2, unsigned char c3)
+{
+  int flag = 0;
+  if (c1 == 0xe3)
+  {
+    if((c2 >= 0x82) && (c3 >= 0xa1))
+    {
+      if ((c2 <= 0x83) && (c3 <= 0xb6))
+      {
+        flag = 1; // カタカナ
+      }
+    }
+    else if((c2 >= 0x81) && (c3 >= 0x81))
+    {
+      flag = -1; // ひらがな
+    }
+    else if ((c2 <= 0x82) && (c3 <= 0x96))
+    {
+      flag = -1; // ひらがな
+    }
+  }
+  else if (c1 == 0xe4)
+  {
+    if(c2 <= 0xb8)
+    {
+      if (c3 <= 0x80)
+      {
+        flag = 1; // ひらがな
+      }
+    }
+  }
+  return flag;
+}
 
-  ifs_noun.close();
-  return sel_noun.at(r);
+void morpheme()
+{
+  string word = "";
+  int beforeJudge = 5; // 0, 1, -1以外の何でもない数
+  bool flag_same = false;
+  for (int i = 0; i < ngramed.size(); i++)
+  {
+    int judge = judgeMorpheme(ngramed.at(i)[0], ngramed.at(i)[1], ngramed.at(i)[2]);
+    if(countByte(ngramed.at(i)[0]) == 3)
+    {
+      if (beforeJudge == judge)
+      {
+        flag_same = true;
+        word += ngramed.at(i);
+        if ( i <= ngramed.size() - 2 && judge ==  judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]))
+        {
+          continue;
+        }
+      }
+      else
+      {
+        beforeJudge = judge;
+        word = ngramed.at(i);
+        flag_same = false;
+        if ( i <= ngramed.size() - 2 && judge ==  judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]))
+        {
+          continue;
+        }
+      }
+    }
+    else
+    {
+      if (beforeJudge == 4)
+      {
+        flag_same = true;
+        word += ngramed.at(i);
+        if ( i <= ngramed.size() - 2 && judge ==  judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]))
+        {
+          continue;
+        }
+      }
+      else 
+      {
+        beforeJudge = judge;
+        word = ngramed.at(i);
+        flag_same = false;
+        if ( i <= ngramed.size() - 2 && judge ==  judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]))
+        {
+          continue;
+        }
+      }
+    }
+    txt.push_back(word);
+    if ( i <= ngramed.size() - 2 && judge == 0)
+    {
+      int nextJudge = judgeMorpheme(ngramed.at(i + 1)[0], ngramed.at(i + 1)[1], ngramed.at(i + 1)[2]);
+      if (nextJudge == -1)
+      {
+        if ( ngramed.at(i + 1) == "い" )
+        {
+          adj.push_back(word + "い");
+        }
+        else if ( ngramed.at(i + 1) == "う" )
+        {
+          verb.push_back(word + "う");
+        }
+        else if ( ngramed.at(i + 1) == "だ" )
+        {
+          adjv.push_back(word + "だ");
+        }
+        else
+        {
+          noun.push_back(word);
+        }
+      }
+    }
+  }
+}
+
+string sel_noun()
+{
+  srand( time( NULL ) );
+  vector<string> sel_noun;
+
+  int r = rand() % noun.size();
+
+  return noun.at(r);
 }
 
 string sel_prase()
 {
-  string line;
+  if ( verb.empty() && adj.empty() && adjv.empty() )
+  {
+    return "FAILED";
+  }
   int r = rand() % 3;
-  const char* fname;
+  vector<string> sel_prase;
   switch(r)
   {
     case 0:
-      fname = "verb.txt";
-      break;
+      if ( !verb.empty() )
+      {
+        r = rand() % verb.size();
+        return verb.at(r);
+      }
     case 1:
-      fname = "adj.txt";
-      break;
+      if ( !adj.empty() )
+      {
+        r = rand() % adj.size();
+        return adj.at(r);
+      }
     case 2:
-      fname = "adjv.txt";
-      break;
+      if ( !adjv.empty() )
+      {
+        r = rand() % adjv.size();
+        return adjv.at(r);
+      }
   }
-  ifstream ifs(fname);
-  if ( !ifs )
-  {
-    cerr << "failed open " << fname << endl;
-    exit(1);
-  }
-  vector<string> sel_prase;
-  getline( ifs, line );
-  while( !ifs.eof() )
-  {
-    sel_prase.push_back( line );
-    getline( ifs, line );
-  }
-  r = rand() % sel_prase.size();
-
-  ifs.close();
-  return sel_prase.at(r);
+  return "ERROR";
 }
 
 int main()
 {
-  string word;
+  string line;
   cout << "input :";
-  cin >> word;
+  cin >> line;
 
-  cout << sel_noun(word);
-  cout << "は";
-  cout << sel_prase();
+  ngram(line, 1);
+
+  morpheme();
+
+  string noun = sel_noun();
+  string prase = sel_prase();
+  if ( prase == "ERROR" )
+  {
+    while ( prase == "ERROR" )
+    {
+      prase = sel_prase();
+    }
+  }
+
+  if ( prase == "FAILED" )
+  {
+    cout << prase << " : Cannot generate sentence." << endl;
+  }
+  else
+  {
+    cout << noun << "は" << prase << endl;
+  }
+
 }
