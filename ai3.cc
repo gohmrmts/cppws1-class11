@@ -117,5 +117,5 @@ int main()
 
   cout << sel_noun(word);
   cout << "は";
-  cout << sel_prase() << endl;
+  cout << sel_prase();
 }
