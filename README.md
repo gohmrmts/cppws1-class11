@@ -1,7 +1,11 @@
 ai2.cc マルコフ連鎖を用いた人工無能
+
 morpheme.cc 文字種による形態素解析
+
 parse.cc 形態素の品詞推定
+
 gen_sentence.cc 文生成
+
 ai3.cc 人口無能
 
 
